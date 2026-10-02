@@ -1,0 +1,38 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: gateway-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gateway-api
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Mongo__ConnectionString: mongodb://mongo:27017
+      Mongo__DatabaseName: gateway
+      Mongo__EventsCollectionName: events
+      Sympla__BaseUrl: https://api.sympla.com.br/public/v1.5.1
+      Sympla__Token: ${SYMPLA_TOKEN:-}
+      Ticketmaster__ApiKey: ${TICKETMASTER_API_KEY:-}
+      CuritibaPmc__EnableGeocoding: ${CURITIBA_PMC_GEOCODING:-true}
+      CuritibaPmc__GeocodeMax: ${CURITIBA_PMC_GEOCODE_MAX:-40}
+      Radar__CityRadiusKm: ${RADAR_CITY_RADIUS_KM:-25}
+      Radar__SyncTtlHours: ${RADAR_SYNC_TTL_HOURS:-6}
+    env_file:
+      - path: .env
+        required: false
+
+volumes:
+  mongo_data:

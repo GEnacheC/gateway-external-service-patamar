@@ -1,0 +1,177 @@
+{
+  "info": {
+    "_postman_id": "eb9aab98-363a-4c10-b49c-6f00f74f0ad6",
+    "name": "Patamar Gateway External",
+    "description": "Radar gateway: sync/list by lat/long with city-sized radius (default 25km).\n\nSelect environment: Patamar Gateway Local\nProviders: all | sympla | sympla-public | curitiba-pmc | ticketmaster",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "host", "value": "localhost" },
+    { "key": "port", "value": "8080" },
+    { "key": "lat", "value": "-25.4284" },
+    { "key": "long", "value": "-49.2733" },
+    { "key": "radiusKm", "value": "25" },
+    { "key": "provider", "value": "sympla-public" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{host}}:{{port}}/health",
+              "protocol": "http",
+              "host": ["{{host}}"],
+              "port": "{{port}}",
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "List Events In Radar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "description": "Requires lat/long. Returns Mongo events inside city radar (default 25km).",
+            "url": {
+              "raw": "http://{{host}}:{{port}}/api/events?lat={{lat}}&long={{long}}&radiusKm={{radiusKm}}",
+              "protocol": "http",
+              "host": ["{{host}}"],
+              "port": "{{port}}",
+              "path": ["api", "events"],
+              "query": [
+                { "key": "lat", "value": "{{lat}}", "description": "Required. Curitiba: -25.4284" },
+                { "key": "long", "value": "{{long}}", "description": "Required. Curitiba: -49.2733" },
+                { "key": "radiusKm", "value": "{{radiusKm}}", "description": "Optional. Default 25" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sync",
+      "item": [
+        {
+          "name": "Sync Radar (provider variable)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "description": "Syncs providers into a city-sized radar around lat/long. Skips if area is still warm.",
+            "url": {
+              "raw": "http://{{host}}:{{port}}/api/events/sync?lat={{lat}}&long={{long}}&radiusKm={{radiusKm}}&provider={{provider}}",
+              "protocol": "http",
+              "host": ["{{host}}"],
+              "port": "{{port}}",
+              "path": ["api", "events", "sync"],
+              "query": [
+                { "key": "lat", "value": "{{lat}}" },
+                { "key": "long", "value": "{{long}}" },
+                { "key": "radiusKm", "value": "{{radiusKm}}" },
+                { "key": "provider", "value": "{{provider}}" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync All Providers",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "http://{{host}}:{{port}}/api/events/sync?lat={{lat}}&long={{long}}&radiusKm={{radiusKm}}&provider=all",
+              "protocol": "http",
+              "host": ["{{host}}"],
+              "port": "{{port}}",
+              "path": ["api", "events", "sync"],
+              "query": [
+                { "key": "lat", "value": "{{lat}}" },
+                { "key": "long", "value": "{{long}}" },
+                { "key": "radiusKm", "value": "{{radiusKm}}" },
+                { "key": "provider", "value": "all" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync Sympla Public",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "http://{{host}}:{{port}}/api/events/sync?lat={{lat}}&long={{long}}&radiusKm={{radiusKm}}&provider=sympla-public",
+              "protocol": "http",
+              "host": ["{{host}}"],
+              "port": "{{port}}",
+              "path": ["api", "events", "sync"],
+              "query": [
+                { "key": "lat", "value": "{{lat}}" },
+                { "key": "long", "value": "{{long}}" },
+                { "key": "radiusKm", "value": "{{radiusKm}}" },
+                { "key": "provider", "value": "sympla-public" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync Curitiba PMC",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "http://{{host}}:{{port}}/api/events/sync?lat={{lat}}&long={{long}}&radiusKm={{radiusKm}}&provider=curitiba-pmc",
+              "protocol": "http",
+              "host": ["{{host}}"],
+              "port": "{{port}}",
+              "path": ["api", "events", "sync"],
+              "query": [
+                { "key": "lat", "value": "{{lat}}" },
+                { "key": "long", "value": "{{long}}" },
+                { "key": "radiusKm", "value": "{{radiusKm}}" },
+                { "key": "provider", "value": "curitiba-pmc" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Force Sync All",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "description": "Ignores warm radar TTL and refreshes external providers.",
+            "url": {
+              "raw": "http://{{host}}:{{port}}/api/events/sync?lat={{lat}}&long={{long}}&radiusKm={{radiusKm}}&provider=all&force=true",
+              "protocol": "http",
+              "host": ["{{host}}"],
+              "port": "{{port}}",
+              "path": ["api", "events", "sync"],
+              "query": [
+                { "key": "lat", "value": "{{lat}}" },
+                { "key": "long", "value": "{{long}}" },
+                { "key": "radiusKm", "value": "{{radiusKm}}" },
+                { "key": "provider", "value": "all" },
+                { "key": "force", "value": "true" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
