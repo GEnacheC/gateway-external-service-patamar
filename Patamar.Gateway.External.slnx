@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Patamar.Gateway.External.Api/Patamar.Gateway.External.Api.csproj" />
+    <Project Path="src/Patamar.Gateway.External.Application/Patamar.Gateway.External.Application.csproj" />
+    <Project Path="src/Patamar.Gateway.External.Domain/Patamar.Gateway.External.Domain.csproj" />
+    <Project Path="src/Patamar.Gateway.External.Infrastructure/Patamar.Gateway.External.Infrastructure.csproj" />
+  </Folder>
+</Solution>
