@@ -1,1 +1,0 @@
-# gateway-external-service-patamar
