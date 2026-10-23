@@ -1,0 +1,12 @@
+@Patamar.Gateway.External.Api_HostAddress = http://localhost:8080
+
+GET {{Patamar.Gateway.External.Api_HostAddress}}/api/events
+Accept: application/json
+
+###
+POST {{Patamar.Gateway.External.Api_HostAddress}}/api/events/sync?provider=sympla
+Accept: application/json
+
+###
+GET {{Patamar.Gateway.External.Api_HostAddress}}/health
+Accept: application/json
