@@ -36,6 +36,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IEventRepository, MongoEventRepository>();
         services.AddSingleton<IRadarAreaRepository, MongoRadarAreaRepository>();
+        services.AddHostedService<MongoIndexInitializer>();
         services.AddSingleton<IGeocodingService, NominatimGeocodingService>();
 
         var geocoding = configuration.GetSection(GeocodingOptions.SectionName).Get<GeocodingOptions>()

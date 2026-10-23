@@ -124,6 +124,15 @@ public sealed class EventService(
                 .Where(e => GeoDistance.IsWithinRadius(query.Lat, query.Long, e.Lat, e.Long, query.RadiusKm))
                 .ToList();
 
+            // Drop stale cached events for this provider in the radar before writing the fresh set
+            // (force refresh or TTL expired). Only runs after a successful external fetch.
+            await eventRepository.DeleteNearbyAsync(
+                query.Lat,
+                query.Long,
+                query.RadiusKm,
+                provider,
+                cancellationToken);
+
             // Keep events without coordinates only for city-scoped providers that returned them;
             // radar list requires geo, so drop null-location items.
             await eventRepository.UpsertManyAsync(inRadius, cancellationToken);

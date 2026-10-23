@@ -12,6 +12,14 @@ namespace Patamar.Gateway.External.Infrastructure.Persistence;
 
 public sealed class MongoEventRepository : IEventRepository
 {
+    private static readonly CreateIndexModel<EventDocument> SourceIdIndex = new(
+        Builders<EventDocument>.IndexKeys.Ascending(x => x.Source).Ascending(x => x.Id),
+        new CreateIndexOptions { Unique = true, Name = "ux_source_id" });
+
+    private static readonly CreateIndexModel<EventDocument> LocationIndex = new(
+        Builders<EventDocument>.IndexKeys.Geo2DSphere(x => x.Location),
+        new CreateIndexOptions { Name = "ix_location_2dsphere" });
+
     private readonly IMongoCollection<EventDocument> _collection;
 
     public MongoEventRepository(IMongoClient client, IOptions<MongoOptions> options)
@@ -19,16 +27,7 @@ public sealed class MongoEventRepository : IEventRepository
         var mongo = options.Value;
         var database = client.GetDatabase(mongo.DatabaseName);
         _collection = database.GetCollection<EventDocument>(mongo.EventsCollectionName);
-
-        _collection.Indexes.CreateOne(
-            new CreateIndexModel<EventDocument>(
-                Builders<EventDocument>.IndexKeys.Ascending(x => x.Source).Ascending(x => x.Id),
-                new CreateIndexOptions { Unique = true, Name = "ux_source_id" }));
-
-        _collection.Indexes.CreateOne(
-            new CreateIndexModel<EventDocument>(
-                Builders<EventDocument>.IndexKeys.Geo2DSphere(x => x.Location),
-                new CreateIndexOptions { Name = "ix_location_2dsphere" }));
+        EnsureIndexes();
     }
 
     public async Task UpsertManyAsync(
@@ -63,7 +62,30 @@ public sealed class MongoEventRepository : IEventRepository
             return;
         }
 
+        await EnsureIndexesAsync(cancellationToken);
         await _collection.BulkWriteAsync(models, cancellationToken: cancellationToken);
+    }
+
+    public async Task DeleteNearbyAsync(
+        double lat,
+        double lng,
+        double radiusKm,
+        string source,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(source);
+        await EnsureIndexesAsync(cancellationToken);
+
+        // $centerSphere radius is in radians (Earth ≈ 6378.1 km).
+        var filter = Builders<EventDocument>.Filter.And(
+            Builders<EventDocument>.Filter.Eq(x => x.Source, source),
+            Builders<EventDocument>.Filter.GeoWithinCenterSphere(
+                "Location",
+                lng,
+                lat,
+                radiusKm / 6378.1));
+
+        await _collection.DeleteManyAsync(filter, cancellationToken);
     }
 
     public async Task<IReadOnlyList<EventsDto>> GetNearbyAsync(
@@ -72,6 +94,8 @@ public sealed class MongoEventRepository : IEventRepository
         double radiusKm,
         CancellationToken cancellationToken = default)
     {
+        await EnsureIndexesAsync(cancellationToken);
+
         var maxDistanceMeters = radiusKm * 1000.0;
         var filter = new BsonDocument(
             "Location",
@@ -107,10 +131,31 @@ public sealed class MongoEventRepository : IEventRepository
             .Select(d => d.ToDto())
             .ToList();
     }
+
+    private void EnsureIndexes()
+    {
+        _collection.Indexes.CreateOne(SourceIdIndex);
+        _collection.Indexes.CreateOne(LocationIndex);
+    }
+
+    private async Task EnsureIndexesAsync(CancellationToken cancellationToken)
+    {
+        // Idempotent: recreates 2dsphere after dropDatabase / dropped collection while the API stays up.
+        await _collection.Indexes.CreateOneAsync(SourceIdIndex, cancellationToken: cancellationToken);
+        await _collection.Indexes.CreateOneAsync(LocationIndex, cancellationToken: cancellationToken);
+    }
 }
 
 public sealed class MongoRadarAreaRepository : IRadarAreaRepository
 {
+    private static readonly CreateIndexModel<RadarAreaDocument> RadarIdIndex = new(
+        Builders<RadarAreaDocument>.IndexKeys.Ascending(x => x.Id),
+        new CreateIndexOptions { Unique = true, Name = "ux_radar_id" });
+
+    private static readonly CreateIndexModel<RadarAreaDocument> RadarLocationIndex = new(
+        Builders<RadarAreaDocument>.IndexKeys.Geo2DSphere(x => x.Location),
+        new CreateIndexOptions { Name = "ix_radar_location_2dsphere" });
+
     private readonly IMongoCollection<RadarAreaDocument> _collection;
 
     public MongoRadarAreaRepository(
@@ -120,16 +165,8 @@ public sealed class MongoRadarAreaRepository : IRadarAreaRepository
     {
         var database = client.GetDatabase(mongoOptions.Value.DatabaseName);
         _collection = database.GetCollection<RadarAreaDocument>(radarOptions.Value.RadarAreasCollectionName);
-
-        _collection.Indexes.CreateOne(
-            new CreateIndexModel<RadarAreaDocument>(
-                Builders<RadarAreaDocument>.IndexKeys.Ascending(x => x.Id),
-                new CreateIndexOptions { Unique = true, Name = "ux_radar_id" }));
-
-        _collection.Indexes.CreateOne(
-            new CreateIndexModel<RadarAreaDocument>(
-                Builders<RadarAreaDocument>.IndexKeys.Geo2DSphere(x => x.Location),
-                new CreateIndexOptions { Name = "ix_radar_location_2dsphere" }));
+        _collection.Indexes.CreateOne(RadarIdIndex);
+        _collection.Indexes.CreateOne(RadarLocationIndex);
     }
 
     public async Task<RadarArea?> FindCoveringAreaAsync(
