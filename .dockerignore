@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+.git/
+docs/
+.env
+.env.local
+*.md
+!README.md
+.vs/
+**/.DS_Store
